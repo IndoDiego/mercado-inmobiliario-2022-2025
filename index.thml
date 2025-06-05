@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Interactivo del Mercado Inmobiliario de Málaga (2022-2025)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: He diseñado la aplicación con una estructura de panel de control de una sola página con navegación por pestañas (Visión General, Análisis por Zonas, Comparativa, Conclusiones). Esta arquitectura transforma el informe lineal en una experiencia exploratoria no lineal. El usuario puede obtener una vista macro, profundizar en un área específica de interés o comparar zonas directamente. La sección "Análisis por Zonas" es el núcleo interactivo, utilizando un selector para actualizar dinámicamente los gráficos y la información textual, lo que permite una comprensión detallada y enfocada de cada micro-mercado. Esta estructura fue elegida porque facilita la digestión de datos complejos y permite al usuario controlar el flujo de información según sus intereses, mejorando la usabilidad y el compromiso en comparación con la simple lectura del informe. -->
+    <!-- Visualization & Content Choices: 
+        - Resumen: Tarjetas (HTML/Tailwind) para métricas clave. Objetivo: Informar. Justificación: Presentación rápida y escaneable.
+        - Evolución general: Gráfico de líneas (Chart.js/Canvas). Objetivo: Mostrar cambio. Justificación: Ideal para visualizar tendencias a lo largo del tiempo para casas vs. pisos.
+        - Precio por zona/fuente: Gráfico de barras (Chart.js/Canvas). Objetivo: Comparar. Justificación: Muestra claramente la discrepancia de precios entre diferentes portales para una misma zona.
+        - Variación por tamaño: Gráfico de anillos (Chart.js/Canvas). Objetivo: Comparar proporciones. Justificación: Visualiza eficazmente la diferencia de rendimiento entre propiedades grandes (>100m²) y pequeñas (<100m²).
+        - Comparativa de Zonas: Gráfico de barras horizontales (Chart.js/Canvas). Objetivo: Comparar/Clasificar. Justificación: Permite una fácil comparación y clasificación de las zonas por precio y crecimiento.
+        - Factores Clave: Tarjetas con texto e iconos Unicode (HTML/Tailwind). Objetivo: Organizar/Informar. Justificación: Comunica rápidamente los impulsores cualitativos del mercado de forma visual y concisa.
+        Todas las visualizaciones son interactivas y se actualizan dinámicamente, promoviendo la exploración. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7;
+            color: #4A4441;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            border-bottom-color: #D97706; /* amber-600 */
+            color: #4A4441;
+        }
+        .zone-btn {
+            transition: all 0.3s ease;
+        }
+        .zone-btn.active {
+            background-color: #D97706;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-center items-center py-4">
+                <ul class="flex space-x-4 sm:space-x-8 text-sm sm:text-base font-semibold text-gray-500">
+                    <li><a href="#overview" class="nav-link py-2">Visión General</a></li>
+                    <li><a href="#analysis" class="nav-link py-2">Análisis por Zonas</a></li>
+                    <li><a href="#comparison" class="nav-link py-2">Comparativa</a></li>
+                    <li><a href="#conclusions" class="nav-link py-2">Conclusiones</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 sm:py-12">
+        
+        <section id="hero" class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Mercado Inmobiliario de Málaga</h1>
+            <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">Un análisis interactivo del dinámico mercado de la vivienda en las zonas más cotizadas de la ciudad, desde 2022 hasta las proyecciones de 2025.</p>
+        </section>
+
+        <section id="overview" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">Visión General de Málaga Capital</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">El mercado de Málaga ha mostrado una resiliencia y un crecimiento extraordinarios, superando la media nacional. Factores como la inversión extranjera, el auge tecnológico y una calidad de vida inigualable han consolidado a la ciudad como un punto de referencia inmobiliario en España. Esta sección explora las tendencias generales que definen el mercado a nivel de toda la ciudad.</p>
+            
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="bg-white rounded-lg shadow-md p-6 order-2 md:order-1">
+                    <h3 class="font-bold text-xl mb-4 text-gray-700">Evolución del Precio (€/m²) en Málaga Capital</h3>
+                    <div class="chart-container">
+                        <canvas id="capitalPriceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="space-y-6 order-1 md:order-2">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="font-bold text-xl mb-3 text-gray-700">Factores Clave del Mercado</h3>
+                         <div class="space-y-4 text-gray-600">
+                            <p><span class="text-amber-600 font-bold text-xl mr-2">🌍</span><strong class="text-gray-700">Inversión Extranjera:</strong> Un tercio de los compradores en la provincia son internacionales, atraídos por el estilo de vida y el teletrabajo.</p>
+                            <p><span class="text-amber-600 font-bold text-xl mr-2">💻</span><strong class="text-gray-700">Hub Tecnológico:</strong> La llegada de grandes empresas como Google impulsa la demanda de vivienda cualificada.</p>
+                            <p><span class="text-amber-600 font-bold text-xl mr-2">✈️</span><strong class="text-gray-700">Conectividad Global:</strong> El aeropuerto internacional con rutas en expansión facilita el acceso a inversores y residentes.</p>
+                            <p><span class="text-amber-600 font-bold text-xl mr-2">🌿</span><strong class="text-gray-700">Sostenibilidad y Calidad:</strong> Crece la demanda de viviendas eficientes energéticamente, que alcanzan precios superiores.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="analysis" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">Análisis Detallado por Zonas</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">Cada barrio de Málaga tiene su propia personalidad y dinámica de mercado. Seleccione una zona para explorar en profundidad sus características, la evolución de sus precios y los factores específicos que influyen en su valor. Descubra por qué algunas áreas se consolidan en el lujo mientras otras experimentan una revitalización acelerada.</p>
+            
+            <div class="flex justify-center flex-wrap gap-2 mb-8">
+                <button data-zone="malagueta" class="zone-btn active text-sm sm:text-base font-semibold py-2 px-4 rounded-full bg-white shadow-sm border border-gray-200">La Malagueta</button>
+                <button data-zone="limonar" class="zone-btn text-sm sm:text-base font-semibold py-2 px-4 rounded-full bg-white shadow-sm border border-gray-200">Limonar</button>
+                <button data-zone="pedregalejo" class="zone-btn text-sm sm:text-base font-semibold py-2 px-4 rounded-full bg-white shadow-sm border border-gray-200">Pedregalejo</button>
+                <button data-zone="cerrado" class="zone-btn text-sm sm:text-base font-semibold py-2 px-4 rounded-full bg-white shadow-sm border border-gray-200">Cerrado de Calderón</button>
+                <button data-zone="palo" class="zone-btn text-sm sm:text-base font-semibold py-2 px-4 rounded-full bg-white shadow-sm border border-gray-200">El Palo</button>
+            </div>
+
+            <div id="zone-details" class="bg-white rounded-lg shadow-lg p-6 sm:p-8 transition-all duration-500">
+                <h3 id="zone-title" class="text-2xl font-bold mb-1 text-gray-800"></h3>
+                <p id="zone-description" class="text-gray-600 mb-6"></p>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 text-center">
+                    <div class="bg-amber-50 rounded-lg p-4">
+                        <p class="text-sm text-amber-800 font-semibold">Precio Medio (€/m²)</p>
+                        <p id="zone-price" class="text-3xl font-bold text-amber-700"></p>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <p class="text-sm text-blue-800 font-semibold">Variación Anual</p>
+                        <p id="zone-variation" class="text-3xl font-bold text-blue-700"></p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 md:col-span-2 lg:col-span-1">
+                        <p class="text-sm text-green-800 font-semibold">Tendencia Dominante</p>
+                        <p id="zone-trend" class="text-xl font-bold text-green-700"></p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="font-bold text-lg mb-2 text-gray-700 text-center">Precios 2025 (€/m²) por Fuente</h4>
+                        <div class="chart-container">
+                            <canvas id="zonePriceChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2 text-gray-700 text-center">Variación Anual (%) por Tamaño</h4>
+                         <div class="chart-container">
+                            <canvas id="zoneSizeVariationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">Comparativa de Zonas</h2>
+             <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">¿Cómo se posiciona cada zona frente a las demás? Esta sección ofrece una comparación directa de las métricas clave para entender rápidamente la jerarquía de precios y las diferentes velocidades de crecimiento en el mercado inmobiliario de Málaga. Visualice qué barrios lideran en valor y cuáles presentan un mayor dinamismo.</p>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-bold text-lg mb-4 text-gray-700 text-center">Comparativa de Precios Medios 2025 (€/m²)</h3>
+                        <div class="chart-container h-80 md:h-96">
+                            <canvas id="comparisonPriceChart"></canvas>
+                        </div>
+                    </div>
+                     <div>
+                        <h3 class="font-bold text-lg mb-4 text-gray-700 text-center">Comparativa de Variación Anual (%)</h3>
+                        <div class="chart-container h-80 md:h-96">
+                            <canvas id="comparisonVariationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusions" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">Conclusiones y Perspectivas</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">El mercado inmobiliario en las zonas selectas de Málaga continuará mostrando fortaleza. La demanda se mantendrá sólida, aunque los compradores serán cada vez más selectivos. A continuación se resumen las oportunidades, riesgos y recomendaciones estratégicas para navegar este mercado dinámico hacia finales de 2025.</p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="font-bold text-xl mb-4 text-gray-700 flex items-center"><span class="text-green-500 text-2xl mr-3">💡</span>Oportunidades</h3>
+                    <ul class="space-y-3 list-disc list-inside text-gray-600">
+                        <li>Inversión en barrios con potencial de revalorización como <strong>El Palo</strong>, gracias a mejoras urbanísticas.</li>
+                        <li>Adquisición de viviendas con criterios de <strong>sostenibilidad y eficiencia energética</strong>, que comandan una prima de mercado.</li>
+                        <li>El segmento de <strong>viviendas grandes (>100m²)</strong> muestra una demanda robusta y una apreciación significativa en varias zonas.</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="font-bold text-xl mb-4 text-gray-700 flex items-center"><span class="text-red-500 text-2xl mr-3">⚠️</span>Riesgos</h3>
+                    <ul class="space-y-3 list-disc list-inside text-gray-600">
+                        <li><strong>Cambios regulatorios</strong> sobre vivienda y alquiler turístico que pueden impactar la oferta y rentabilidad.</li>
+                        <li>Dependencia del <strong>comprador internacional</strong>, que introduce sensibilidad a factores económicos globales.</li>
+                        <li>Precios de entrada muy elevados en zonas prime, con una <strong>competencia intensa</strong> por una oferta escasa.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-4 py-6 text-center text-sm text-gray-400">
+            <p>Aplicación interactiva creada a partir del "Informe del Mercado Inmobiliario: Zonas Selectas de Málaga (2022-2025)".</p>
+            <p>Datos extraídos y sintetizados de fuentes como Idealista, Fotocasa, RealAdvisor y otros informes sectoriales de 2022 a 2025.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const marketData = {
+                capital: {
+                    labels: ['2022', '2023', '2024 (Est.)', '2025'],
+                    datasets: [
+                        {
+                            label: 'Pisos (€/m²)',
+                            data: [null, null, 3165, 3570],
+                            borderColor: '#D97706',
+                            backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Casas (€/m²)',
+                            data: [null, null, 3038, 3319],
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                zones: {
+                    malagueta: {
+                        title: 'La Malagueta - Monte Sancha',
+                        description: 'La zona más cotizada y exclusiva de Málaga. Su ubicación prime junto a la playa, Muelle Uno y el centro histórico atrae una demanda de lujo y segundas residencias con el poder adquisitivo más alto de la ciudad.',
+                        price: '6.533 - 8.179 €',
+                        variation: '+4.1% a +19.9%',
+                        trend: 'Lujo Consolidado',
+                        priceComparison: {
+                            labels: ['Idealista (Abr)', 'Fotocasa (May)', 'SpainHouses (Jun)'],
+                            data: [6533, 7018, 8179]
+                        },
+                        sizeVariation: {
+                            labels: ['>100m²', '<100m²'],
+                            data: [19.91, -25.70]
+                        }
+                    },
+                    limonar: {
+                        title: 'Limonar',
+                        description: 'Barrio residencial prestigioso y tradicional, caracterizado por sus elegantes villas y pisos de alta calidad. Atrae a compradores nacionales e internacionales que buscan exclusividad y un entorno consolidado.',
+                        price: '4.700 - 5.412 €',
+                        variation: '+3.0% (Idealista)',
+                        trend: 'Prestigio y Estabilidad',
+                        priceComparison: {
+                            labels: ['Idealista (Abr)', 'Fotocasa (May)'],
+                            data: [4700, 5412]
+                        },
+                        sizeVariation: {
+                            labels: ['>100m²', '<100m²'],
+                            data: [-21.31, -6.69]
+                        }
+                    },
+                    pedregalejo: {
+                        title: 'Pedregalejo - Morlaco',
+                        description: 'Antiguo barrio pesquero con un encanto único. Su paseo marítimo, playas y ambiente relajado atraen a una fuerte demanda internacional. La oferta es limitada, lo que mantiene una presión constante sobre los precios.',
+                        price: '4.196 - 5.812 €',
+                        variation: '+15.4% a +19.3%',
+                        trend: 'Auge y Calidad de Vida',
+                        priceComparison: {
+                            labels: ['Idealista (Abr)', 'Fotocasa (May)'],
+                            data: [4196, 5812]
+                        },
+                        sizeVariation: {
+                            labels: ['>100m²', '<100m²'],
+                            data: [19.29, 6.18]
+                        }
+                    },
+                    cerrado: {
+                        title: 'Cerrado de Calderón',
+                        description: 'Zona residencial muy apreciada por familias, gracias a sus urbanizaciones con servicios, zonas comunes y la presencia de colegios de prestigio. Ofrece una alta calidad de vida en un entorno tranquilo y seguro.',
+                        price: '3.705 - 5.175 €',
+                        variation: '+14.7% (Idealista)',
+                        trend: 'Demanda Familiar Sólida',
+                        priceComparison: {
+                            labels: ['Idealista (Abr)', 'Fotocasa (May)'],
+                            data: [3705, 5175]
+                        },
+                        sizeVariation: {
+                            labels: ['>100m²', '<100m²'],
+                            data: [-2.56, 6.70]
+                        }
+                    },
+                    palo: {
+                        title: 'El Palo',
+                        description: 'Barrio tradicional en plena transformación. Su creciente popularidad, impulsada por mejoras en infraestructuras y nuevos proyectos, está atrayendo a un público diverso y provocando una rápida revalorización.',
+                        price: '3.461 - 4.032 €',
+                        variation: '+12.0% a +35.0%',
+                        trend: 'Transformación y Potencial',
+                        priceComparison: {
+                            labels: ['Idealista (Abr)', 'Fotocasa (May)'],
+                            data: [3461, 4032]
+                        },
+                        sizeVariation: {
+                            labels: ['>100m²', '<100m²'],
+                            data: [35.03, -0.11]
+                        }
+                    }
+                }
+            };
+
+            let capitalPriceChart, zonePriceChart, zoneSizeVariationChart, comparisonPriceChart, comparisonVariationChart;
+
+            const chartDefaultOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('es-ES') + ' €';
+                            }
+                        }
+                    }
+                }
+            };
+            
+            function createCapitalPriceChart() {
+                const ctx = document.getElementById('capitalPriceChart').getContext('2d');
+                capitalPriceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: marketData.capital,
+                    options: chartDefaultOptions
+                });
+            }
+
+            function createZoneCharts(zoneId) {
+                const zoneData = marketData.zones[zoneId];
+                
+                if (zonePriceChart) zonePriceChart.destroy();
+                const ctxPrice = document.getElementById('zonePriceChart').getContext('2d');
+                zonePriceChart = new Chart(ctxPrice, {
+                    type: 'bar',
+                    data: {
+                        labels: zoneData.priceComparison.labels,
+                        datasets: [{
+                            label: 'Precio por Fuente (€/m²)',
+                            data: zoneData.priceComparison.data,
+                            backgroundColor: ['#FBBF24', '#60A5FA', '#34D399'],
+                            borderColor: ['#F59E0B', '#3B82F6', '#059669'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: { ...chartDefaultOptions, plugins: { legend: { display: false } } }
+                });
+
+                if (zoneSizeVariationChart) zoneSizeVariationChart.destroy();
+                const ctxSize = document.getElementById('zoneSizeVariationChart').getContext('2d');
+                zoneSizeVariationChart = new Chart(ctxSize, {
+                    type: 'doughnut',
+                    data: {
+                        labels: zoneData.sizeVariation.labels,
+                        datasets: [{
+                            label: 'Variación Anual por Tamaño (%)',
+                            data: zoneData.sizeVariation.data,
+                            backgroundColor: ['#10B981', '#EF4444'],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                             tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed.toLocaleString('es-ES') + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateZoneDetails(zoneId) {
+                const zone = marketData.zones[zoneId];
+                document.getElementById('zone-title').textContent = zone.title;
+                document.getElementById('zone-description').textContent = zone.description;
+                document.getElementById('zone-price').textContent = zone.price;
+                document.getElementById('zone-variation').textContent = zone.variation;
+                document.getElementById('zone-trend').textContent = zone.trend;
+
+                createZoneCharts(zoneId);
+            }
+
+            document.querySelectorAll('.zone-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelector('.zone-btn.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    const zoneId = e.target.dataset.zone;
+                    updateZoneDetails(zoneId);
+                });
+            });
+            
+            function createComparisonCharts() {
+                const zones = Object.keys(marketData.zones);
+                const labels = zones.map(id => marketData.zones[id].title);
+                
+                const priceData = zones.map(id => {
+                    const prices = marketData.zones[id].priceComparison.data;
+                    return prices.reduce((a, b) => a + b, 0) / prices.length;
+                });
+                
+                const variationData = zones.map(id => {
+                    const variations = marketData.zones[id].sizeVariation.data;
+                    const positiveVariations = variations.filter(v => v > 0);
+                    if(positiveVariations.length === 0) return 0;
+                    return positiveVariations.reduce((a, b) => a + b, 0) / positiveVariations.length;
+                });
+
+                if (comparisonPriceChart) comparisonPriceChart.destroy();
+                const ctxPrice = document.getElementById('comparisonPriceChart').getContext('2d');
+                comparisonPriceChart = new Chart(ctxPrice, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Precio Medio (€/m²)',
+                            data: priceData,
+                            backgroundColor: '#FBBF24',
+                        }]
+                    },
+                    options: { ...chartDefaultOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { ticks: { callback: (v) => v.toLocaleString('es-ES') + '€' } } } }
+                });
+
+                if (comparisonVariationChart) comparisonVariationChart.destroy();
+                const ctxVar = document.getElementById('comparisonVariationChart').getContext('2d');
+                comparisonVariationChart = new Chart(ctxVar, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Variación Anual Media Positiva (%)',
+                            data: variationData,
+                            backgroundColor: '#60A5FA',
+                        }]
+                    },
+                    options: { ...chartDefaultOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { ticks: { callback: (v) => v.toFixed(1) + '%' } } } }
+                });
+            }
+
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => observer.observe(section));
+            
+            createCapitalPriceChart();
+            updateZoneDetails('malagueta');
+            createComparisonCharts();
+        });
+    </script>
+</body>
+</html>
